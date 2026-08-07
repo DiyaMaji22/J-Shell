@@ -1,0 +1,61 @@
+services:
+  # j-shell — interactive shell session
+  # Run: docker compose run --rm jshell
+  jshell:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: jshell:latest
+    container_name: jshell
+    stdin_open: true
+    tty: true
+    environment:
+      JAVA_OPTS: "-Xmx512m -Xms128m -XX:+UseSerialGC"
+    volumes:
+      # Mounts host ./workspace into the container so files persist across sessions
+      - ./workspace:/app/workspace
+    working_dir: /app/workspace
+
+  # j-shell-test — runs mvn test and exits
+  # Run: docker compose run --rm jshell-test
+  jshell-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build
+    image: jshell-test:latest
+    container_name: jshell-test
+    command: ["mvn", "test"]
+    environment:
+      MAVEN_OPTS: "-Xmx512m"
+    volumes:
+      # Cache Maven local repo across builds — significantly speeds up repeated runs
+      - maven-cache:/root/.m2
+
+  # j-shell-dev — mounts source for live rebuilds during development
+  # Run: docker compose run --rm jshell-dev
+  # Build + run in one step without touching local Maven install.
+  jshell-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build
+    image: jshell-dev:latest
+    container_name: jshell-dev
+    stdin_open: true
+    tty: true
+    command: ["sh", "-c", "mvn clean package -DskipTests -q && java $$JAVA_OPTS -jar target/j-shell-*.jar"]
+    environment:
+      JAVA_OPTS: "-Xmx512m -Xms128m"
+    volumes:
+      # Live source mount — edit locally, run inside container
+      - ./src:/app/src:ro
+      - ./pom.xml:/app/pom.xml:ro
+      - maven-cache:/root/.m2
+      - ./workspace:/app/workspace
+
+volumes:
+  # Named volume for Maven dependency cache — survives container removal
+  maven-cache:
+    driver: local

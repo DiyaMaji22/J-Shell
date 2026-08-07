@@ -1,0 +1,8 @@
+banana
+apple
+banana
+3
+10
+2
+hello world
+
