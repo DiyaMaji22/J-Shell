@@ -126,6 +126,7 @@ public final class App {
         registry.register("history",  new SystemCommands.HistoryCommand());
         registry.register("whoami",   new SystemCommands.WhoamiCommand());
         registry.register("date",     new SystemCommands.DateCommand());
+        
         registry.register("clear",    new SystemCommands.ClearCommand());
 
         registry.register("find",     new SearchCommands.FindCommand());
